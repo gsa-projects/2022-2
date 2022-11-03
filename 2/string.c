@@ -24,7 +24,7 @@ void removeDuplicateSpace(char* str) {
 
     for (int i = 0; i < strlen(str); i++) {
         if (isalpha(str[i]) != 0) { // 알파벳이면
-            temp[temp_idx++] = str[i]; // temp에 알파벳 넣고
+            temp[temp_idx++] = str[i]; // temp에 알파벳 넣고1
         }
         else { // 알파벳 아니면
             if (str[i] == ' ') { // 알파벳 아닌 것들 중 공백이면
