@@ -2,6 +2,11 @@
     "files.associations": {
         "stdio.h": "c",
         "ctype.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "*.tcc": "c",
+        "vector": "c",
+        "optional": "c",
+        "cmath": "c",
+        "string.h": "c"
     }
 }

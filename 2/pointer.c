@@ -111,14 +111,18 @@ void pointer_and_array() {
     printf("%d %d %d\n", a[0], a[1], a[2]);
 }
 
+#define double_pointer
+#if defined(double_pointer)
+void dp(char **p) {
+    *p = "hello";
+}
+
 int main() {
-    //address();
-    //pointer_practice1();
-    //pointer_practice2();
-    //get_sum();
-    //pointer_add();
-    //pointer_constant();
-    //pointer_and_array();
+    char *q;
+    dp(&q);
+
+    printf("%s\n", *q);
 
     return 0;
 }
+#endif

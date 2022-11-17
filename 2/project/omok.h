@@ -9,18 +9,27 @@
 #include <Windows.h>
 
 #define DOL_YOU "⬤ "
-#define DOL_BOT "⬤ " //"◯ "
+#define DOL_BOT "◯ " //"⬤ "
+// #define WALL 2
+#define AROUND 2
 
 typedef enum key {
-    ENTER = 13, ARROW = -32, ARROW_UP = 72, ARROW_LEFT = 75, ARROW_RIGHT = 77, ARROW_DOWN = 80
+    ENTER = 13,
+    ARROW = -32,
+    ARROW_UP = 72,
+    ARROW_LEFT = 75,
+    ARROW_RIGHT = 77,
+    ARROW_DOWN = 80
 } key;
 
 typedef enum stat {
-    EMPTY, YOU, BOT
+    EMPTY, YOU, BOT, WALL
 } stat;
 
 typedef enum color {
-    BLACK, BLUE, GREEN, TEAL, RED, PURPLE, YELLOW, WHITE, GRAY, BRIGHT_BLUE, BRIGHT_GREEN, BRIGHT_TEAL, BRIGHT_RED, BRIGHT_PURPLE, BRIGHT_YELLOW, DEEP_WHITE
+    BLACK, BLUE, GREEN, TEAL, RED, PURPLE, YELLOW, WHITE, GRAY,
+    BRIGHT_BLUE, BRIGHT_GREEN, BRIGHT_TEAL, BRIGHT_RED, BRIGHT_PURPLE, BRIGHT_YELLOW,
+    DEEP_WHITE
 } color;
 
 typedef struct coord {
@@ -31,14 +40,16 @@ typedef struct coord {
 typedef struct grid {
     coord pos;
     stat stat;
+    int weight;
 } grid;
 
 coord get_bot(coord cursor);
-int is_around(coord pos);
-int is_around_e(int row, int col);
-stat get_stat(int row, int col);
 coord best_choice(coord pos1, coord pos2);
-int random(int a, int b);
+stat get_stat(int row, int col);
+int is_around(coord pos);
+int is_around_s(coord pos, stat s);
+int random(int a, int b);int dist(coord c1, coord c2);
+bool is_none(coord pos);
 void set_pos(coord* pos, int r, int c);
 void print_board(coord cursor);
 void cursor_move(coord* cursor, char key);
