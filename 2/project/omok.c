@@ -1,11 +1,13 @@
 #include "omok.h"
 #define ROW 19
 #define COL 19
-#define DEBUG
+//#define DEBUG
 
 int dols = 0;
 stat game = EMPTY;
 grid board[ROW][COL];
+coord mok5_position[5] = {{-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}};
+coord last = { -1, -1 };
 
 int main() {
     coord cursor = { ROW / 2, COL / 2 };  // 커서의 위치를 오목판 가운데로 초기화
@@ -49,17 +51,54 @@ int main() {
                 printf(" installed at (%d, %d)", cursor.row, cursor.col);
 
                 coord bot = get_bot(cursor);
+                last = bot;
 
 #ifdef DEBUG
                 char ip; printf("\nkeep going? "); ip = getchar();
                 getchar();
-#endif
-#ifndef DEBUG
+#endif              
                 Sleep(500);
-#endif
+
+                game_status_reload();
+
+                if (game == YOU || game == BOT) {
+                    system("cls");
+                    print_board(cursor);
+
+                    set_color(BRIGHT_YELLOW);
+                    printf("\n\n[CMD] ");
+
+                    set_color(game == YOU ? BRIGHT_BLUE : BRIGHT_RED);
+                    printf("%s", game == YOU ? "You" : "Bot");
+
+                    set_color(WHITE);
+                    printf(" Win\n");
+                    
+                    set_color(BLACK);
+                    return 0;
+                }
+
                 board[bot.row][bot.col].stat = BOT;
+
+                game_status_reload();
+
                 system("cls");
                 print_board(cursor);
+
+                if (game == YOU || game == BOT) {
+
+                    set_color(BRIGHT_YELLOW);
+                    printf("\n\n[CMD] ");
+
+                    set_color(game == YOU ? BRIGHT_BLUE : BRIGHT_RED);
+                    printf("%s", game == YOU ? "You" : "Bot");
+
+                    set_color(WHITE);
+                    printf(" Win\n");
+
+                    set_color(BLACK);
+                    return 0;
+                }
 
                 set_color(BRIGHT_RED);
                 printf("\n\n[BOT]");
@@ -83,7 +122,6 @@ int main() {
 }
 
 coord get_bot(coord cursor) {
-    // todo: 빈틈 내고 오목 만드는 경우 막기
     // todo: 막아야 하는 경우가 생겨도 자기가 이길 수 있는 경우 무시하고 공격
     // todo: 가중치가 빈틈 연속목에서 가장 높은 수를 가지게 하기
     // todo: 오목을 만들 수 없는 거리의 벽에서는 연속목을 하지 않게 하기
@@ -96,10 +134,10 @@ coord get_bot(coord cursor) {
     };
     coord final_choice = { -1, -1 };
     coord voids[4] = {
-        {-1, -1},
-        {-1, -1},
-        {-1, -1},
-        {-1, -1}
+                    {-1, -1},
+                    {-1, -1},
+                    {-1, -1},
+                    {-1, -1}
     };
     int changes[4][2] = {
         {0, 1}, {1, 0}, {1, -1}, {1, 1}
@@ -124,20 +162,21 @@ coord get_bot(coord cursor) {
                 // 연속목 체크
                 for (int kind = 0; kind < 4; ++kind) {
                     for (int idx = 0; idx < 5; ++idx) {
-                        stat this = get_stat(i + changes[kind][0] * idx, j + changes[kind][1] * idx);
+                        coord crd = { i + changes[kind][0] * idx, j + changes[kind][1] * idx };
+                        stat this = get_stat(crd.row, crd.col);
 #ifdef DEBUG
                         //if (counts[kind] >= 3) printf("\n%s: (%d, %d) --%d-> (%d, %d)", letters[kind], i, j, counts[kind], i + changes[kind][0] * idx, j + changes[kind][1] * idx);
 #endif // DEBUG
-
-                        if (this != BOT) {
+                        if (this == BOT) break;
+                        else {
                             if (this == YOU)
                                 counts[kind]++;
-                            else if (this == EMPTY && is_none(voids[kind]))
-                                voids[kind] = board[i + changes[kind][0] * idx][j + changes[kind][1] * idx].pos;
+                            else if (this == EMPTY && is_none(voids[kind]) && get_stat(crd.row + changes[kind][0], crd.col + changes[kind][1]) == YOU)
+                                voids[kind] = board[crd.row][crd.col].pos;
                             else break;
                         }
                     }
-                    if (counts[kind] <= 3) set_pos(&voids[kind], -1, -1);
+                    //if (counts[kind] < 3) set_pos(&voids[kind], -1, -1);
                 }
 
 #ifdef DEBUG
@@ -147,23 +186,34 @@ coord get_bot(coord cursor) {
                 }
 #endif
 
+#ifdef DEBUG
+                printf("\nvoid and count [%d(%d, %d), %d(%d, %d), %d(%d, %d), %d(%d, %d)]", counts[0], voids[0].row, voids[0].col, counts[1], voids[1].row, voids[1].col, counts[2], voids[2].row, voids[2].col, counts[3], voids[3].row, voids[3].col);
+#endif // DEBUG
+
                 // 연속목 방어
                 for (int kind = 0; kind < 4; ++kind) {
-                    switch (counts[kind]) {
-                    case 5:
+                    if (counts[kind] == 5) {
                         game = YOU;
-                        break;
-                    case 4:
-                        if (!is_none(voids[kind])) {
-                            set_pos(&choices[kind], voids[kind].row, voids[kind].col);
-                            break;
+                        for (int t = 0; t < 5; ++t) {
+                            set_pos(&mok5_position[t], i + t * changes[kind][0], j + t * changes[kind][1]);
                         }
-                    case 3:
+                    }
+                    else if (counts[kind] >= 3) {
+                        if (!is_none(voids[kind]) && counts[kind] == 4) {
+                            set_pos(&choices[kind], voids[kind].row, voids[kind].col);
+                            continue;
+                        }
+
                         coord next1 = { i - changes[kind][0], j - changes[kind][1] };
-                        coord next2 = { i + counts[kind] * changes[kind][0], j + counts[kind] * changes[kind][1] };
+                        coord next2 = { i + (is_none(voids[kind]) ? 0 : 1) + counts[kind] * changes[kind][0], j + (is_none(voids[kind]) ? 0 : 1) + counts[kind] * changes[kind][1] };
 
                         bool isblock1 = get_stat(next1.row, next1.col) != EMPTY;
                         bool isblock2 = get_stat(next2.row, next2.col) != EMPTY;
+
+                        if (!is_none(voids[kind]) && counts[kind] == 3 && !isblock1 && !isblock2) {
+                            set_pos(&choices[kind], voids[kind].row, voids[kind].col);
+                            continue;
+                        }
 
                         if (!isblock1 && !isblock2)
                             choices[kind] = best_choice(next1, next2);
@@ -171,8 +221,6 @@ coord get_bot(coord cursor) {
                             choices[kind] = next1;
                         else if (isblock1 && !isblock2 && counts[kind] >= 4)
                             choices[kind] = next2;
-
-                        break;
                     }
                 }
             }
@@ -217,6 +265,9 @@ coord get_bot(coord cursor) {
 
     // 방어 착수 지점 선택
     final_choice = best_choice(choices[0], best_choice(choices[1], best_choice(choices[2], choices[3])));
+#ifdef DEBUG
+    printf("\nchoices = [(%d, %d), (%d, %d), (%d, %d), (%d, %d)] so choose (%d, %d)", choices[0].row, choices[0].col, choices[1].row, choices[1].col, choices[2].row, choices[2].col, choices[3].row, choices[3].col, final_choice.row, final_choice.col);
+#endif // DEBUG
 
     // 착수
     if (!is_none(final_choice)) return final_choice;
@@ -226,7 +277,7 @@ coord get_bot(coord cursor) {
             do {
                 srand(time(NULL));
                 set_pos(&ret, cursor.row + (rand() % 3) - 1, cursor.col + (rand() % 3) - 1);
-            } while (get_stat(ret.row, ret.col) == WALL);
+            } while (get_stat(ret.row, ret.col) == WALL || (cursor.row == ret.row && cursor.col == ret.col));
 
             return ret;
         }
@@ -234,22 +285,54 @@ coord get_bot(coord cursor) {
             grid max_pos = board[0][0];
             for (int i = 0; i < ROW; ++i)
                 for (int j = 0; j < COL; ++j)
-                    if (board[i][j].weight > max_pos.weight && get_stat(i, j) == EMPTY) {
+                    if (board[i][j].weight > max_pos.weight && get_stat(i, j) == EMPTY)
                         max_pos = board[i][j];
-                    }
 
             int distance = is_around_s(board[0][0].pos, BOT);
-            for (int i = 0; i < ROW; i++)
-                for (int j = 0; j < COL; j++)
+            for (int i = 0; i < ROW; i++) {
+                for (int j = 0; j < COL; j++) {
                     if (board[i][j].weight == max_pos.weight && is_around_s(board[i][j].pos, BOT) > distance && get_stat(i, j) == EMPTY) {
                         distance = is_around_s(board[i][j].pos, BOT);
                         max_pos = board[i][j];
-#ifdef DEBUG
-                        //printf("[%d | (%d, %d)]\n", max_pos.weight, i, j);
-#endif // DEBUG
                     }
+                }
+            }
 
             return max_pos.pos;
+        }
+    }
+}
+
+void game_status_reload() {
+    if (game != EMPTY) return;
+
+    int changes[4][2] = {
+        {0, 1}, {1, 0}, {1, -1}, {1, 1}
+    };
+
+    for (int i = 0; i < ROW; ++i) {
+        for (int j = 0; j < COL; j++) {
+            if (get_stat(i, j) == BOT) {
+                int counts[4] = { 0, 0, 0, 0 };
+
+                for (int kind = 0; kind < 4; ++kind) {
+                    for (int idx = 0; idx < 5; ++idx) {
+                        coord crd = { i + changes[kind][0] * idx, j + changes[kind][1] * idx };
+                        stat this = get_stat(crd.row, crd.col);
+
+                        if (this != BOT) break;
+                        else counts[kind]++;
+                    }
+                    
+                    if (counts[kind] == 5) {
+                        game = BOT;
+                        for (int t = 0; t < 5; ++t) {
+                            set_pos(&mok5_position[t], i + t * changes[kind][0], j + t * changes[kind][1]);
+                        }
+                        return;
+                    }
+                }
+            }
         }
     }
 }
@@ -342,35 +425,40 @@ void print_board(coord cursor) {
             }
         }
         printf("\n");
+    }
 #endif
 #ifndef DEBUG
-    for (int i = 0; i < ROW; ++i) {
-        for (int j = 0; j < COL; ++j) {
-            int iscursor = i == cursor.row && j == cursor.col;
-            switch (get_stat(i, j)) {
-            case YOU:
-                set_color(BRIGHT_BLUE - 8 * iscursor);
+        for (int i = 0; i < ROW; ++i) {
+            for (int j = 0; j < COL; ++j) {
+                int iscursor = i == cursor.row && j == cursor.col;
+                int islast = i == last.row && j == last.col;
 
-                printf(DOL_YOU);
-                break;
-            case BOT:
-                set_color(BRIGHT_RED - 8 * iscursor);
+                switch (get_stat(i, j)) {
+                case YOU:
+                    set_color(iscursor ? WHITE : BRIGHT_BLUE);
+                    if (is_in(board[i][j].pos, mok5_position, 5)) set_color(YELLOW);
 
-                printf(DOL_BOT);
-                break;
-            case EMPTY:
-                idx = (i == 0) ? 2 : (i == ROW - 1) ? 0 : 1;
-                if (iscursor) idx += 3;
+                    printf(DOL_YOU);
+                    break;  
+                case BOT:
+                    set_color(iscursor ? WHITE : (islast ? RED : BRIGHT_RED));
+                    if (is_in(board[i][j].pos, mok5_position, 5)) set_color(YELLOW);
 
-                set_color(GRAY - 1 * iscursor);
+                    printf(DOL_BOT);
+                    break;
+                case EMPTY:
+                    idx = (i == 0) ? 2 : (i == ROW - 1) ? 0 : 1;
+                    if (iscursor) idx += 3;
 
-                printf("%s", (j != 0 && j != COL - 1) ? middle[idx] : (j == 0) ? left[idx] : right[idx]);
-                break;
+                    set_color(iscursor ? WHITE : GRAY);
+
+                    printf("%s", (j != 0 && j != COL - 1) ? middle[idx] : (j == 0) ? left[idx] : right[idx]);
+                    break;
+                }
             }
-        }
-        printf("\n");
-#endif
+            printf("\n");
     }
+#endif
 }
 
 void cursor_move(coord* cursor, char input) {
@@ -399,6 +487,18 @@ void set_pos(coord* pos, int r, int c) {
 
 bool is_none(coord pos) {
     return pos.row == -1 && pos.col == -1;
+}
+
+bool is_equal(coord pos1, coord pos2) {
+    return pos1.row == pos2.row && pos1.col == pos2.col;
+}
+
+bool is_in(coord pos, coord* crds, int len) {
+    for (int i = 0; i < len; i++) {
+        if (is_equal(pos, crds[i])) return true;
+    }
+
+    return false;
 }
 
 int dist(coord c1, coord c2) {

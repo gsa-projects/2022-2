@@ -45,11 +45,15 @@ typedef struct grid {
 
 coord get_bot(coord cursor);
 coord best_choice(coord pos1, coord pos2);
+coord best_choiceof(coord* choices, int len);
 stat get_stat(int row, int col);
 int is_around(coord pos);
 int is_around_s(coord pos, stat s);
-int random(int a, int b);int dist(coord c1, coord c2);
+int random(int a, int b); int dist(coord c1, coord c2);
 bool is_none(coord pos);
+bool is_equal(coord pos1, coord pos2);
+bool is_in(coord pos, coord* crds, int len);
+void game_status_reload();
 void set_pos(coord* pos, int r, int c);
 void print_board(coord cursor);
 void cursor_move(coord* cursor, char key);
