@@ -2,6 +2,8 @@
 #include <string.h>
 #include <math.h>
 
+#define menuproblem
+
 #if defined(struct)
 struct point {
 	int x;
@@ -148,7 +150,6 @@ int main() {
 }
 #endif
 
-#define pointp
 #if defined(pointp)
 typedef struct point {
     int x;
@@ -166,5 +167,36 @@ int main() {
     point p3 = translate(p1, p2);
 
     printf("(%d, %d)\n", p3.x, p3.y);
+}
+#endif
+
+#ifdef menuproblem
+typedef struct menu {
+    char name[10];
+    int price;
+    int count;
+} menu;
+
+int main() {
+    printf("매점 메뉴 수량 입력 > ");
+    int n;
+    scanf("%d", &n);
+
+    menu list[10];
+    for (int i = 0; i < n; ++i) {
+        printf("이름 / 가격 / 수량: ");
+        scanf("%s %d %d", &list[i].name, &list[i].price, &list[i].count);
+    }
+
+    printf("검색할 이름을 입력하세요:");
+    char find[10];
+    scanf("%s", find);
+
+    for (int i = 0; i < n; ++i) {
+        if (strcmp(find, list[i].name) == 0) {
+            printf("가격: %d\n수량: %d", list[i].price, list[i].count);
+            break;
+        }
+    }
 }
 #endif
