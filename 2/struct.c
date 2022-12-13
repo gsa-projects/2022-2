@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 
-#define menuproblem
+#define test
 
 #if defined(struct)
 struct point {
@@ -185,7 +185,7 @@ int main() {
     menu list[10];
     for (int i = 0; i < n; ++i) {
         printf("이름 / 가격 / 수량: ");
-        scanf("%s %d %d", &list[i].name, &list[i].price, &list[i].count);
+        scanf("%s %d %d", list[i].name, &list[i].price, &list[i].count);
     }
 
     printf("검색할 이름을 입력하세요:");
@@ -195,8 +195,51 @@ int main() {
     for (int i = 0; i < n; ++i) {
         if (strcmp(find, list[i].name) == 0) {
             printf("가격: %d\n수량: %d", list[i].price, list[i].count);
-            break;
+            return 0;
         }
     }
+    printf("검색실패\n");
+}
+#endif
+
+#ifdef ing
+int* input(int n) {
+    int* r = (int*)malloc(sizeof(int) * n);
+
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &r[i]);
+        printf("%d", r[i]);
+    }
+
+    return r;
+}
+
+int main() {
+    int N, K;
+    scanf("%d %d", &N, &K);
+
+    int* x = input(N);
+}
+#endif
+
+#ifdef test
+int main() {
+    int x = 3;	// 주소 1000
+    int* p = &x;
+
+    printf("%u\n", p);
+    x=3;
+    p=&x;
+    printf("%d\n", ++*p);	// x = 4 되고 4 출력
+    x=3;
+    p=&x;
+    printf("%d\n", *(++p));	// p->1004 되고 *(1004) 출력
+    x=3;
+    p=&x;
+    printf("%d\n", *p++);	// 3 출력하고 p->1004
+    x=3;
+    p=&x;
+    printf("%d\n", (*p)++);	// 3 출력하고 x = 4
+    printf("%d\n", x);
 }
 #endif
